@@ -1,0 +1,109 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>H5 video play 测试</title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        input,
+        textarea {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="server">Server:</label>
+                    <input type="text" id="server" class="form-control"
+                        value="ws://192.168.0.170:3001/?rhost=192.168.8.46&rport=8100&sn=15C9918300409&chn=0" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Controls:</label>
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" id="btnConnect">01.Connect</button>
+                    <button type="button" class="btn btn-primary" id="btnDisconnect">Disconnect</button>
+                    <button type="button" class="btn btn-primary" id="btnSendMsg">SendMsg</button>
+                    <button type="button" class="btn btn-primary" id="btnAuth">02.Auth</button>
+                    <button type="button" class="btn btn-primary" id="btnHeartbeat">Heartbeat</button>
+                    <button type="button" class="btn btn-primary" id="btnOpenVideo">03.OpenVideo</button>
+                    <button type="button" class="btn btn-primary" id="btnCloseVideo">04.CloseVideo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="msgBody">Send:</label>
+                    <input type="text" id="msgId" class="form-control" value="0x0000060D" />
+                    <textarea id="msgBody" class="form-control" style="height:220px;"></textarea>
+                </div>
+                <!-- <div class="form-group">
+                <button type="button" class="btn btn-primary" onclick="sendMsg()">Send</button>
+            </div> -->
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="recv">Recv:</label>
+                    <input type="text" id="recvMsg" class="form-control" readonly="readonly" />
+                    <textarea id="recv" class="form-control" style="height:220px;" readonly="readonly"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="video">Video:</label>
+                <video id="video" style="width: 100%; background-color: #999; border: 1px solid #999;" autoplay></video>
+                <div style="position: absolute; right: 25px; top: 40px; text-align: center;">
+                    <img src="./favicon.png" style="width: 32px;" />
+                    <p style="color: #fff;font-family: 'Courier New', Courier, monospace;">H5 Video<span
+                            style="font-style: italic;">!!</span></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Logs: </label>&nbsp;&nbsp;&nbsp;&nbsp;
+                <input type="checkbox" id="logMsgHeader" />
+                <label for="logMsgHeader">LogMsgHeader</label>
+                <input type="checkbox" id="logMsgBody" />
+                <label for="logMsgBody">logMsgBody</label>
+                <input type="checkbox" id="logVideoFrame" />
+                <label for="logVideoFrame">logVideoFrame</label>
+                <textarea id="logs" class="form-control" style="height: 500px;" readonly="readonly"></textarea>
+            </div>
+        </div>
+    </div>
+    <div style="display:none;">
+        <textarea id="msgAuth"><?xml version="1.0" encoding="utf-8" ?>
+<Message>
+    <Authentication>f8f4ab75564976722aaa05a9dd3f8a12</Authentication>
+    <Time>20190419113650</Time>
+    <Type>1</Type>
+    <Sn>{sn}</Sn>
+    <Ver>2.0</Ver>
+</Message></textarea>
+
+        <textarea id="msgOpenVideo"><?xml version="1.0" encoding="utf-8" ?>
+<Message>
+    <Channel>{channel}</Channel>
+    <StreamType>1</StreamType>
+    <VideoType>1</VideoType>
+    <Encoding>5</Encoding>
+</Message></textarea>
+    </div>
+
+    <script src="./bundle.js"></script>
+
+    <script>
+
+    </script>
+</body>
+
+</html>

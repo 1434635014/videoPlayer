@@ -1,0 +1,92 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>WebSocket吞吐量测试</title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="col-md-12">
+        <form>
+            <h2>WebSocket吞吐量测试：threads: 1</h2>
+            <div class="form-inline">
+                <label for="file1" class="my-1 mr-2">Select file</label>
+                <input type="file" id="file1" class="form-control my-1 mr-sm-2" />
+                <button type="button" class="btn btn-primary my-1 mr-sm-2"
+                    onclick="connectChatServer()">Connect</button>
+                <button type="button" class="btn btn-primary my-1" onclick="sendFile()">Send File</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-12">
+        <textarea id="logs" class="form-control" style="height: 500px;"></textarea>
+    </div>
+
+    <script>
+        var ws;
+        var rawData = new ArrayBuffer();
+        var maxCycle = 100;
+        var cycle = 0;
+        var start;
+        var logsElement = document.getElementById('logs');
+        var logs = '';
+
+        function connectChatServer() {
+            ws = new WebSocket('ws://127.0.0.1:3001/');
+            ws.binaryType = "arraybuffer";
+            ws.onopen = function () {
+                Log("Connected.")
+            }
+
+            ws.onmessage = function (e) {
+                cycle++;
+                Log('received message, length: ' + e.data + ', cycle: ' + cycle);
+                if (cycle < maxCycle) {
+                    ws.send(rawData);
+                }
+                else {
+                    var elapsed = (new Date()) - start;
+                    var bw = Math.round(rawData.byteLength * cycle * 1000 / elapsed / 1024 / 1024);
+                    Log("transferred complete, elapsed time: " + elapsed + 'ms, size: ' + rawData.byteLength + 'Bytes, cycle: ' + cycle + ', bandwidth: ' + bw + 'M/s');
+                }
+            }
+
+            ws.onclose = function () {
+                Log("Connection is closed...");
+            }
+
+            ws.onerror = function (e) {
+                Log(e);
+            }
+        }
+
+        function sendFile() {
+            if (!ws) {
+                Log('websocket not connected.');
+                return;
+            }
+
+            var file = document.getElementById('file1').files[0];
+            var reader = new FileReader();
+
+            reader.loadend = function () {
+            }
+
+            reader.onload = function (e) {
+                start = new Date();
+                rawData = e.target.result;
+                ws.send(rawData);
+            }
+            reader.readAsArrayBuffer(file);
+        }
+
+        function Log(log) {
+            logs = log + '\r\n' + logs;
+            logsElement.innerHTML = logs;
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>flv.js demo</title>
+    <!-- <link rel="stylesheet" type="text/css" href="demo.css" /> -->
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        body {
+            width: 100%;
+        }
+
+        .mainContainer {
+            width: 100%;
+        }
+
+        .video-container {
+            margin-top: 8px;
+            width: 100%;
+            display: table;
+        }
+
+        .video-box {
+            display: table-cell;
+            width: 25%;
+        }
+
+        .video-box video {
+            width: 100%;
+        }
+
+        .logcatBox {
+            border-color: #CCCCCC;
+            font-size: 11px;
+            font-family: Menlo, Consolas, monospace;
+            display: block;
+            width: 100%;
+            text-align: left;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="mainContainer">
+
+        <div class="video-container">
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+        </div>
+        <div class="video-container">
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+        </div>
+        <div class="video-container">
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+        </div>
+        <div class="video-container">
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+            <div class="video-box"><video name="videoElement" class="videoElement" controls autoplay></video></div>
+        </div>
+
+        <div>
+            <button onclick="load()">load</button>
+        </div>
+        <textarea id="logcatbox" name="logcatbox" class="logcatBox" rows="10" readonly></textarea>
+    </div>
+
+    <!-- <script src="../dist/flv.js"></script> -->
+
+    <script src="https://cdn.bootcss.com/flv.js/1.5.0/flv.js"></script>
+
+    <script>
+        var urls = [
+            "http://127.0.0.1:80/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:81/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:82/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:83/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:84/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:85/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:86/flv/Linkin Park - New Divide.flv",
+            "http://127.0.0.1:87/flv/Linkin Park - New Divide.flv",
+            "http://192.168.0.170/flv/New_Divide.flv",
+        ];
+
+        function load() {
+            console.log('flvjs isSupported: ' + flvjs.isSupported());
+
+            var elements = document.getElementsByName('videoElement');
+            for (var i = 0; i < elements.length; i++) {
+                var element = elements[i];
+                var media = {
+                    type: 'flv',
+                    hasVideo: true,
+                    hasVideo: true,
+                    isLive: false,
+                    withCredentials: false
+                };
+                media['url'] = urls[i % urls.length];
+
+                console.log('MediaDataSource', media);
+
+                var player = flvjs.createPlayer(media, {
+                    enableWorker: false,
+                    lazyLoadMaxDuration: 3 * 60,
+                    seekType: 'range',
+                });
+                player.attachMediaElement(element);
+                player.load();
+            }
+        }
+
+        var logcatbox = document.getElementById('logcatbox');
+        flvjs.LoggingControl.addLogListener(function (type, str) {
+            logcatbox.value = logcatbox.value + str + '\n';
+            logcatbox.scrollTop = logcatbox.scrollHeight;
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            //load();
+        });
+    </script>
+
+</body>
+
+</html>

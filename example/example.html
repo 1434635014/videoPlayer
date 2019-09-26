@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>ydplayer.js demo</title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        input,
+        textarea {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-6">
+                <label for="video" class="col-form-label">Video:</label>
+                <div id="video-container" class="clearfix" style="border: 1px solid #999; padding: 1px;"></div>
+            </div>
+            <div class="col-lg-6">
+                <div class="form-group" style="margin-left: 0; margin-right: 0;">
+                    <label for='url' class="col-form-label">Server:</label>
+                    <div class="input-group">
+                        <input type="text" id='url' class="form-control"
+                            value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.233&rport=8100&sn=A1DBE16C04587&chn=0&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650" />
+                        <div class="input-group-append">
+                            <select class="form-control input-group-text" id="server-list">
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.233&rport=8100&sn=A1DBE16C04587&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650">
+                                    A1DBE16C04587
+                                </option>
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.236&rport=8100&sn=5848F19403907&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650">
+                                    5848F19403907
+                                </option>
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.235&rport=8100&sn=300F116C03590&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650">
+                                    300F116C03590
+                                </option>
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.86&rport=20120&sn=4CDB714DS0191&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650&chn=0">
+                                    4CDB714DS0191(NVR)
+                                </option>
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.13&rport=8100&sn=E305B16C01380&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650">
+                                    E305B16C01380 (IPC)
+                                </option>
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.85&rport=20120&sn=52E1318807611&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650&chn=0">
+                                    52E1318807611 (NVR)
+                                </option>
+                                <option
+                                    value="ws-yd://192.168.0.170:10084/?rhost=192.168.8.52&rport=8100&sn=0F9D118807612&auth_token=f8f4ab75564976722aaa05a9dd3f8a12&auth_ts=20190419113650">
+                                    0F9D118807612 (IPC)
+                                </option>
+                                <option
+                                    value="ws-yd://relay001.yunding360.com:10084/?sn=0F9D118807612&auth_token=ec2c3b91d94e0707c5beb350e398af81&auth_ts=0912060652">
+                                    0F9D118807612 (IPC) (Relay001)
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-form-label">Controls:</label>
+                    <div id="actions">
+                        <button type="button" class="btn btn-primary mb-3" id="btnLiving">Living</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnPlayback">Playback</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnToggleAudio">ToggleAudio</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnMute">Mute</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnStop">Stop</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnStopAll">StopAll</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnFitMode">ChangeFitMode</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnFullscreen">Fullscreen</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnFullscreenAll">FullscreenAll</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnCapture">Capture</button>
+                        <button type="button" class="btn btn-primary mb-3" id="btnCaptureAll">CaptureAll</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="dropdown" style="display: inline-block;">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="btnScreen"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Sceen:2x2
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="btnScreen">
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="1,1">1x1</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="2,2">2x2</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="3,3">3x3</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="4,4">4x4</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="5,5">5x5</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="1,2">1x2</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="1,4">1x4</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="4,1">4x1</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="2,1">2x1</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="2,3">2x3</a>
+                            <a class="dropdown-item btnScreenItem" href="#" data-value="3,2">3x2</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div id="message" style="color: #999;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="datetime_modal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <div class="input-group date" id="datetimepicker1">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">选择日期和时间</span>
+                            </div>
+                            <input id="datetimePlayback" type="datetime-local" class="form-control"
+                                value="2019-08-26T12:00:00" />
+                        </div>
+                    </div>
+                    <div class="form-group" style="text-align: right;">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmPlayback">确定</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_capture_image" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="capture_title">Capture</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="capture_image"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/moment.js/2.24.0/moment.min.js"></script>
+    <script src="https://cdn.bootcss.com/moment.js/2.24.0/locale/zh-cn.js"></script>
+    <script src="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+
+    <script src="ydplayer.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        document.getElementById("server-list").addEventListener('change', function () {
+            document.getElementById('url').value = this.value;
+        });
+
+        document.getElementById('btnPlayback').addEventListener('click', function () {
+            $('#datetime_modal').modal();
+        });
+
+        moment.locale('zh-CN');
+        const time = moment().add(-1, 'd').seconds(0).format('YYYY-MM-DDTHH:mm:ss');
+        document.getElementById('datetimePlayback').value = time;
+    </script>
+</body>
+
+</html>

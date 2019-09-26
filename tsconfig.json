@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "lib": ["es2015", "dom"],
+        "strict": true,
+        "removeComments": true,
+        "preserveConstEnums": false,
+        "sourceMap": true,
+        "importHelpers": true,
+        "declaration": true,
+        "stripInternal": true,
+        "outDir": "./output"
+    },
+    "include": [
+        "./src/**/*.ts"
+    ],
+    "compileOnSave": true
+}

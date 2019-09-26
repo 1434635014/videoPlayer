@@ -1,0 +1,429 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>ws-tcp-bridge测试</title>
+    <link href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        input,
+        textarea {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>ws-tcp-bridge测试</h2>
+    <div class="col-md-12">
+        <form>
+            <button type="button" class="btn btn-primary" id="btnConnect">01.Connect</button>
+            <button type="button" class="btn btn-primary" id="btnDisconnect">Disconnect</button>
+            <button type="button" class="btn btn-primary" id="btnAuth">02.Auth</button>
+            <button type="button" class="btn btn-primary" id="btnHeartbeat">Heartbeat</button>
+            <button type="button" class="btn btn-primary" id="btnOpenVideo">03.OpenVideo</button>
+            <button type="button" class="btn btn-primary" id="btnCloseVideo">04.CloseVideo</button>
+        </form>
+    </div>
+    <div class="col-md-12">
+        <div class="form-group">
+            <label for="recv">Server:</label>
+            <input type="text" id="server" class="form-control" value="ws://127.0.0.1:3001/?rhost=192.168.8.45&rport=8100" />
+        </div>
+    </div>
+    <div class="col-md-12">
+        <form>
+            <div class="form-group">
+                <label for="msgBody">Send:</label>
+                <input type="text" id="msgId" class="form-control" value="0x0000060D" />
+                <textarea id="msgBody" class="form-control" style="height:220px;"></textarea>
+            </div>
+            <!-- <div class="form-group">
+                <button type="button" class="btn btn-primary" onclick="sendMsg()">Send</button>
+            </div> -->
+        </form>
+    </div>
+    <div class="col-md-12">
+        <form>
+            <div class="form-group">
+                <label for="recv">Recv:</label>
+                <textarea id="recv" class="form-control" style="height:220px;"></textarea>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-12">
+        <label for="send">Logs:</label>
+        <textarea id="logs" class="form-control" style="height: 500px;"></textarea>
+    </div>
+
+    <div style="display:none;">
+        <textarea id="msgAuth"><?xml version="1.0" encoding="utf-8" ?>
+<Message>
+    <Authentication>f8f4ab75564976722aaa05a9dd3f8a12</Authentication>
+    <Time>20190419113650</Time>
+    <Type>1</Type>
+    <Sn>D833517801549</Sn>
+    <Ver>2.0</Ver>
+</Message></textarea>
+
+        <textarea id="msgOpenVideo"><?xml version="1.0" encoding="utf-8" ?>
+<Message>
+    <Channel>0</Channel>
+    <StreamType>1</StreamType>
+    <VideoType>1</VideoType>
+    <Encoding>5</Encoding>
+</Message></textarea>
+    </div>
+
+    <script>
+        function CycleBuffer(capacity) {
+            this._capacity = capacity;
+            this._front = 0;
+            this._back = 0;
+            this.length = 0;
+            this._buffer = new Uint8Array(capacity);
+        }
+
+        CycleBuffer.prototype.updateLength = function () {
+            if (this._front >= this._back)
+                this.length = this._front - this._back;
+            else
+                this.length = this._front + this._capacity - this._back;
+        }
+
+        CycleBuffer.prototype.push = function (uint8Array) {
+            var len = uint8Array.byteLength;
+            var capacity = this._capacity;
+            var buffer = this._buffer;
+            var front = this._front;
+            var back = this._back;
+            if (this.length + len > capacity) {
+                throw 'buffer is full.';
+            }
+            if (front + len < capacity) {
+                buffer.set(uint8Array, front);
+                this._front = (front + len) % capacity;
+            }
+            else {
+                var len1 = capacity - front;
+                var s1 = uint8Array.slice(0, len1);
+                var len2 = len - len1;
+                var s2 = uint8Array.slice(len1, len1 + len2);
+                buffer.set(s1, front);
+                buffer.set(s2, 0);
+                this._front = len2;
+            }
+            this.updateLength();
+        };
+
+        CycleBuffer.prototype.pop = function (len) {
+            var capacity = this._capacity;
+            var buffer = this._buffer;
+            var front = this._front;
+            var back = this._back;
+
+            if (len > this.length) {
+                throw 'not enough elements for pop';
+            }
+            var end = front > back ? front : capacity;
+            if (back + len <= end) {
+                this._back += len;
+                this.updateLength();
+                return buffer.slice(back, len + back);
+            }
+            else {
+                var len1 = capacity - back;
+                var s1 = buffer.slice(back, len1 + back);
+                var len2 = len - len1;
+                var s2 = buffer.slice(0, len2);
+                var result = new Uint8Array(len);
+                result.set(s1, 0);
+                result.set(s2, len1);
+                this._back = (back + len) % capacity;
+                this.updateLength();
+                return result;
+            }
+        }
+    </script>
+
+    <script>
+
+        /**
+         * Convert a 32-bit quantity (long integer) from host byte order to network byte order (Little-Endian to Big-Endian).
+         *
+         * @param {Array|Buffer} b Array of octets or a nodejs Buffer
+         * @param {number} i Zero-based index at which to write into b
+         * @param {number} v Value to convert
+         */
+        function htonl(b, i, v) {
+            b[i] = (0xff & (v >> 24));
+            b[i + 1] = (0xff & (v >> 16));
+            b[i + 2] = (0xff & (v >> 8));
+            b[i + 3] = (0xff & (v));
+        };
+
+        /**
+         * Convert a 32-bit quantity (long integer) from network byte order to host byte order (Big-Endian to Little-Endian).
+         *
+         * @param {Array|Buffer} b Array of octets or a nodejs Buffer to read value from
+         * @param {number} i Zero-based index at which to read from b
+         * @returns {number}
+         */
+        function ntohl(b, i) {
+            return ((0xff & b[i]) << 24) |
+                ((0xff & b[i + 1]) << 16) |
+                ((0xff & b[i + 2]) << 8) |
+                ((0xff & b[i + 3]));
+        };
+
+        function toInt16(b, i) {
+            return ((0xff & b[i])) | ((0xff & b[i + 1]) << 8);
+        }
+
+        function toInt32(b, i) {
+            return ((0xff & b[i])) | ((0xff & b[i + 1]) << 8) | ((0xff & b[i + 2]) << 16) | ((0xff & b[i + 3]) << 24);
+        }
+
+        function toInt64(b, i) {
+            var i1 = ((0xff & b[i])) | ((0xff & b[i + 1]) << 8) | ((0xff & b[i + 2]) << 16) | ((0xff & b[i + 3]) << 24);
+            var i2 = ((0xff & b[i + 4])) | ((0xff & b[i + 5]) << 8) | ((0xff & b[i + 6]) << 16) | ((0xff & b[i + 7]) << 24);
+            return i1 | (i2 << 32);
+        }
+
+        function getUTF8Bytes(string) {
+            if (!("TextEncoder" in window))
+                throw ("Sorry, this browser does not support TextEncoder...");
+            var enc = new TextEncoder();    // always utf-8
+            return enc.encode(string);
+        };
+
+        function getUTF8String(uint8Array) {
+            if (!("TextDecoder" in window))
+                throw ("Sorry, this browser does not support TextDecoder...");
+            var enc = new TextDecoder("utf-8");
+            return enc.decode(uint8Array);
+        }
+
+        function concatBuffer(uint8Array1, uint8Array2) {
+            var result = new Uint8Array(uint8Array1.byteLength + uint8Array2.byteLength);
+            result.set(uint8Array1, 0);
+            result.set(uint8Array2, uint8Array1.byteLength);
+            return result;
+        }
+
+        function buf2hex(uint8Array) {
+            return Array.prototype.map.call(uint8Array, function (x) {
+                return ('00' + x.toString(16)).slice(-2);
+            }).join(' ');
+        }
+    </script>
+
+    <script>
+        var ws;
+        var logsElement = document.getElementById('logs');
+        var logs = '';
+        var _session = 0;
+        var _connected = false;
+        var _auth = false;
+
+        var _position = 0;
+        var _buffer = new CycleBuffer(8 * 1024 * 1024);
+
+        var _continuous = false;
+        var _lastHeader = {};
+        var _lastBody;
+
+        document.getElementById('btnConnect').addEventListener('click', connectWSServer);
+        document.getElementById('btnDisconnect').addEventListener('click', function () {
+            if (ws) {
+                ws.close();
+            }
+        });
+        document.getElementById('btnAuth').addEventListener('click', function () {
+            document.getElementById('msgId').value = '0x0000060D';
+            document.getElementById('msgBody').value = document.getElementById('msgAuth').value;
+            sendMsg();
+        });
+        document.getElementById('btnHeartbeat').addEventListener('click', function () {
+            document.getElementById('msgId').value = '0x00000A01';
+            document.getElementById('msgBody').value = '';
+            sendMsg();
+        });
+        document.getElementById('btnOpenVideo').addEventListener('click', function () {
+            document.getElementById('msgId').value = '0x00000101';
+            document.getElementById('msgBody').value = document.getElementById('msgOpenVideo').value;
+            sendMsg();
+        });
+        document.getElementById('btnCloseVideo').addEventListener('click', function () {
+            document.getElementById('msgId').value = '0x00000103';
+            document.getElementById('msgBody').value = '';
+            sendMsg();
+        });
+
+        function connectWSServer() {
+            var serverAddress = document.getElementById('server').value;
+            if (!serverAddress) {
+                Log('input ws server address.');
+                return;
+            }
+
+            ws = new WebSocket(serverAddress);
+
+            ws.binaryType = "arraybuffer";
+            ws.onopen = function () {
+                _connected = true;
+                _auth = false;
+                Log("ws onnected.");
+            }
+
+            ws.onmessage = function (e) {
+                _buffer.push(new Uint8Array(e.data));
+                onReceivedMessage();
+            }
+
+            ws.onclose = function () {
+                _connected = false;
+                _auth = false;
+                Log("ws connection is closed...");
+            }
+
+            ws.onerror = function (e) {
+                console.log(e);
+                Log(e);
+            }
+        }
+
+        function sendMsg() {
+            if (!ws || !_connected) {
+                Log('websocket is not connected.');
+                return;
+            }
+
+            var msgId = parseInt(document.getElementById('msgId').value);
+            if (!_auth && (msgId != 0x0000060D)) {
+                Log('pu is not auth.');
+                return;
+            }
+
+            var content = document.getElementById('msgBody').value;
+            //var auth = getUTF8Bytes('<?xml version="1.0" encoding="utf-8" ?><Message><Authentication>f8f4ab75564976722aaa05a9dd3f8a12</Authentication><Time>20190419113650</Time><Type>1</Type><Sn>D833517801549</Sn><Ver>2.0</Ver></Message>');
+            var body = getUTF8Bytes(content);
+            var bodyLen = body.byteLength;
+
+            var headerLen = _session ? 16 : 12;
+            var headerBuf = new ArrayBuffer(headerLen);
+            var header = new Uint8Array(headerBuf);
+            htonl(header, 0, msgId);
+            htonl(header, 4, bodyLen);
+            if (headerLen >= 16)
+                htonl(header, 12, _session);
+
+            var message = concatBuffer(header, body);
+
+            Log(`send message, msgId: ${msgId}, bodyLength: ${bodyLen}, session: ${_session}, content: ${content}`);
+            ws.send(message.buffer);
+        }
+
+        function readHeader() {
+            if (_buffer.length > 12) {
+                var headerLen = 12;
+                var msgIdBuf = _buffer.pop(4);
+                var msgId = ntohl(msgIdBuf, 0) & 0x0000FFFF;
+                //auth message, msgHeader is 12 bytes
+                if (msgId == 0x0000060D) {
+                    headerLen = 12;
+                }
+                else {
+                    headerLen = 16;
+                }
+                var header = new Uint8Array(headerLen);
+                header.set(msgIdBuf, 0);
+                header.set(_buffer.pop(headerLen - 4), 4);
+                var msgLen = ntohl(header, 4);
+                var msgErr = ntohl(header, 8);
+                if (headerLen >= 16) {
+                    var session = ntohl(header, 12);
+                    if (session != _session)
+                        console.log('sessionId is not matched.');
+                }
+                _lastHeader['msgId'] = msgId;
+                _lastHeader['msgLen'] = msgLen;
+                _lastHeader['msgErr'] = msgErr;
+                _lastHeader['session'] = _session;
+                Log(`recv message header, msgId: ${msgId}, msgLen: ${msgLen}, msgErr: ${msgErr}, Session: ${_session}`);
+                //auth message, auth
+                if (msgId == 0x0000060D && msgErr == 0) {
+                    _session = parseInt(Math.random() * 10000);
+                    _auth = true;
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        function readBody(msgLen) {
+            if (_buffer.length >= msgLen) {
+                _lastBody = _buffer.pop(msgLen);
+                Log(`recv message body, length: ${msgLen}, buffer length: ${_buffer.length}`);
+                return true;
+            }
+            return false;
+        }
+
+        var _lastTimestamp = 0;
+        var _frameIndex = 0;
+        function onReceivedMessage() {
+            while (_continuous || _buffer.length >= 12) {
+                if (!_continuous) {
+                    //接收header
+                    if (readHeader()) {
+                        //设置是否需要接收BODY
+                        if (_lastHeader.msgLen > 0)
+                            _continuous = true;
+                        else
+                            showMessage('');
+                    }
+                    else {
+                        break;
+                    }
+                }
+
+                if (_continuous) {
+                    if (readBody(_lastHeader.msgLen)) {
+                        _continuous = false;
+                        var bodyString;
+                        var buf = _lastBody;
+                        var msgId = _lastHeader.msgId;
+                        if (msgId == 0x00000102 || msgId == 0x00010102 || msgId == 0x00000202 || msgId == 0x00000302) {
+                            var ts = toInt64(buf, 8);
+                            var interval = _lastTimestamp > 0 ? ts - _lastTimestamp : 0;
+                            Log(`data frame, frameIndex: ${_frameIndex},  chn: ${toInt16(buf, 0)}, streamType: ${toInt16(buf, 2)}, streamIndex: ${toInt16(buf, 4)}, frameType: ${toInt16(buf, 6)}, timestamp: ${ts}, interval: ${interval}`);
+                            _lastTimestamp = ts;
+                            bodyString = buf2hex(buf.slice(16));
+                            _frameIndex++;
+                        }
+                        else {
+                            bodyString = getUTF8String(buf);
+                        }
+                        showMessage(bodyString);
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        function showMessage(msgBody) {
+            document.getElementById('recv').value = msgBody;
+        }
+
+        function Log(log) {
+            logs = log + '\r\n' + logs;
+            logsElement.innerHTML = logs;
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+{
+  "scripts": {
+    "dev": "gulp watch",
+    "build": "gulp release"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.1",
+    "@types/ws": "^6.0.1",
+    "babel-core": "^6.26.3",
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "^8.0.0",
+    "browser-sync": "^2.26.7",
+    "browserify": "^16.2.3",
+    "browserify-css": "^0.15.0",
+    "del": "2.2.0",
+    "fancy-log": "^1.3.3",
+    "gulp": "^4.0.0",
+    "gulp-javascript-obfuscator": "^1.1.6",
+    "gulp-sourcemaps": "^2.6.5",
+    "gulp-typescript": "^5.0.1",
+    "gulp-uglify": "^3.0.2",
+    "tsify": "^4.0.1",
+    "typescript": "^3.5.1",
+    "vinyl-buffer": "^1.0.1",
+    "vinyl-source-stream": "^2.0.0",
+    "watchify": "^3.11.1"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.6.0",
+    "@types/text-encoding": "0.0.35",
+    "core-js": "^3.2.1",
+    "es6-promise": "^4.2.8",
+    "fast-text-encoding": "^1.0.0",
+    "file-saver": "^2.0.2",
+    "promise-polyfill": "^8.1.3",
+    "text-encoding": "^0.7.0",
+    "universal-websocket-client": "^1.0.2",
+    "url-polyfill": "^1.1.7",
+    "ws": "^7.0.0"
+  }
+}
