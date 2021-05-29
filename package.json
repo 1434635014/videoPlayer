@@ -36,6 +36,6 @@
     "text-encoding": "^0.7.0",
     "universal-websocket-client": "^1.0.2",
     "url-polyfill": "^1.1.7",
-    "ws": "^7.0.0"
+    "ws": "^7.4.6"
   }
 }
